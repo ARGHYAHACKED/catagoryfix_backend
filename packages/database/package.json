@@ -4,6 +4,12 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.json",
     "generate": "node scripts/run-with-root-env.cjs prisma generate",
