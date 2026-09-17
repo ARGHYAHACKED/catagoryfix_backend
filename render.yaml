@@ -7,7 +7,8 @@ services:
     name: catalogfix-api
     runtime: node
     plan: starter
-    buildCommand: pnpm install --frozen-lockfile && pnpm db:generate && pnpm --filter @catalogfix/api build
+    nodeVersion: 22.x
+    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && pnpm --filter @catalogfix/database generate && pnpm build
     startCommand: node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
@@ -60,7 +61,8 @@ services:
     name: catalogfix-worker
     runtime: node
     plan: starter
-    buildCommand: pnpm install --frozen-lockfile && pnpm db:generate && pnpm --filter @catalogfix/worker build
+    nodeVersion: 22.x
+    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && pnpm --filter @catalogfix/database generate && pnpm build
     startCommand: node apps/worker/dist/main.js
     envVars:
       - key: NODE_ENV
