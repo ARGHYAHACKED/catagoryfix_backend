@@ -1,0 +1,1 @@
+{"version":3,"file":"variant-grouper.d.ts","sourceRoot":"","sources":["variant-grouper.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAiB,cAAc,EAAE,cAAc,EAAE,MAAM,UAAU,CAAC;AAE9E,wBAAgB,aAAa,CAAC,KAAK,EAAE,KAAK,CAAC;IAAE,WAAW,EAAE,MAAM,CAAC;IAAC,OAAO,EAAE,cAAc,CAAC;IAAC,OAAO,EAAE,cAAc,CAAA;CAAE,CAAC,GAAG,cAAc,EAAE,CAyCvI"}

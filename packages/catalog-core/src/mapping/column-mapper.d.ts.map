@@ -1,0 +1,1 @@
+{"version":3,"file":"column-mapper.d.ts","sourceRoot":"","sources":["column-mapper.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,UAAU,CAAC;AAE1C,MAAM,MAAM,WAAW,GAAG,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC,CAAC;AAEjD,wBAAgB,kBAAkB,CAChC,GAAG,EAAE,SAAS,EACd,OAAO,EAAE,WAAW,GACnB,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC,CAgBxB"}
