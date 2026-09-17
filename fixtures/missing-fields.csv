@@ -1,0 +1,8 @@
+Supplier ID,Product Name,SKU,Description,Brand,Category,Color,Size,Cost,Retail Price,Inventory,Barcode,Image URL
+SUP-300,,SKU-NO-TITLE,Has sku but no title,Acme,Apparel,Red,S,5,10,1,12345678,https://example.com/a.jpg
+SUP-301,No SKU Product,,Missing sku,Acme,Apparel,Red,S,5,10,1,12345678,
+SUP-302,Broken Price,SKU-BAD-PRICE,Bad price,Acme,Apparel,Red,S,5,FREE,1,abc,not-a-url
+SUP-303,Duplicate One,DUP-SKU,First,Acme,Apparel,Red,S,5,10,1,99999999,https://example.com/a.jpg
+SUP-304,Duplicate Two,DUP-SKU,Second,Acme,Apparel,Blue,M,5,10,1,99999999,https://example.com/b.jpg
+SUP-305,Negative Price,SKU-NEG,Neg,Acme,Apparel,Red,S,5,-3,1,12345670,https://example.com/c.jpg
+SUP-306,Formula Cell,=CMD,Injected,Acme,Apparel,Red,S,5,10,1,12345671,https://example.com/d.jpg

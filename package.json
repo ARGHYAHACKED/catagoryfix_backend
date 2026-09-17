@@ -1,0 +1,33 @@
+{
+  "name": "catalogfix",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turn messy supplier catalogs into store-ready products.",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @catalogfix/database generate",
+    "db:migrate": "pnpm --filter @catalogfix/database migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @catalogfix/database migrate:deploy",
+    "db:seed": "pnpm --filter @catalogfix/database seed",
+    "db:studio": "pnpm --filter @catalogfix/database studio",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f postgres redis minio",
+    "dev:api": "pnpm --filter @catalogfix/api dev",
+    "dev:worker": "pnpm --filter @catalogfix/worker dev",
+    "dev:web": "pnpm --filter @catalogfix/web dev",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@catalogfix/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "generate": "node scripts/run-with-root-env.cjs prisma generate",
+    "migrate:dev": "node scripts/run-with-root-env.cjs prisma migrate dev",
+    "migrate:deploy": "node scripts/run-with-root-env.cjs prisma migrate deploy",
+    "studio": "node scripts/run-with-root-env.cjs prisma studio",
+    "db:push": "node scripts/run-with-root-env.cjs prisma db push",
+    "create-admin": "node scripts/run-with-root-env.cjs tsx src/create-admin.ts",
+    "seed": "node scripts/run-with-root-env.cjs tsx src/seed.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "prisma": "^6.1.0",
+    "@types/bcrypt": "^5.0.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx src/seed.ts"
+  }
+}

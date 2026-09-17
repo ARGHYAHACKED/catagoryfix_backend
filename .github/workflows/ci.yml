@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: catalogfix
+          POSTGRES_PASSWORD: catalogfix
+          POSTGRES_DB: catalogfix
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U catalogfix -d catalogfix"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm --filter @catalogfix/database generate
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+    env:
+      DATABASE_URL: postgresql://catalogfix:catalogfix@localhost:5432/catalogfix?schema=public
+      NODE_ENV: test
+      WEB_URL: http://localhost:3000
+      API_URL: http://localhost:3001
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: test-access-secret-min-32-characters
+      JWT_REFRESH_SECRET: test-refresh-secret-min-32-characters
+      PASSWORD_PEPPER: test-pepper-value
+      ENCRYPTION_KEY: test-encryption-key-must-be-long-enough
+      R2_ACCOUNT_ID: local
+      R2_ACCESS_KEY_ID: minio
+      R2_SECRET_ACCESS_KEY: miniosecret
+      R2_BUCKET: catalogfix
+      R2_ENDPOINT: http://localhost:9000

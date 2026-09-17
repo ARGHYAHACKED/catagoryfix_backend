@@ -1,0 +1,16 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.prisma
+apps/web/.next
+packages/database/generated
+infrastructure/docker/data
+.pnpm-store
+*.tsbuildinfo

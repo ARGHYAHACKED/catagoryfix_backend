@@ -1,0 +1,4 @@
+Product Name,SKU,Retail Price
+Good,SKU-1,12.00
+Bad,SKU-2,not-a-price
+Neg,SKU-3,-4

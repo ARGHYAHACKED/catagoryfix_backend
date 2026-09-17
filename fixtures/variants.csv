@@ -1,0 +1,5 @@
+Supplier ID,Product Name,SKU,Description,Brand,Category,Color,Size,Cost,Retail Price,Inventory,Barcode,Image URL
+SUP-100,Classic Tee,TEE-RED-S,Soft cotton tee,Acme,Apparel,Red,S,8.50,19.99,12,12345678,https://example.com/tee.jpg
+SUP-100,Classic Tee,TEE-RED-M,Soft cotton tee,Acme,Apparel,Red,M,8.50,19.99,4,12345679,https://example.com/tee.jpg
+SUP-100,Classic Tee,TEE-RED-L,Soft cotton tee,Acme,Apparel,Red,L,8.50,19.99,8,12345681,https://example.com/tee.jpg
+SUP-100,Classic Tee,TEE-BLK-S,Soft cotton tee,Acme,Apparel,Black,S,8.50,21.00,2,12345682,https://example.com/tee-black.jpg

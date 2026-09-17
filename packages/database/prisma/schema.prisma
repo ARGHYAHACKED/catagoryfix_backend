@@ -1,0 +1,616 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum Plan {
+  FREE
+  STARTER
+  BUSINESS
+  PRO
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum ImportStatus {
+  CREATED
+  UPLOADING
+  UPLOADED
+  QUEUED
+  PARSING
+  MAPPING_REQUIRED
+  PROCESSING
+  VALIDATING
+  READY
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SourcePlatform {
+  GENERIC
+  SHOPIFY
+  WOOCOMMERCE
+  AMAZON
+  CUSTOM
+}
+
+enum TargetPlatform {
+  SHOPIFY
+  WOOCOMMERCE
+  AMAZON
+  EBAY
+}
+
+enum ImportFileType {
+  CATALOG
+  IMAGE_ZIP
+  OTHER
+}
+
+enum ProductStatus {
+  DRAFT
+  PROCESSING
+  READY
+  INVALID
+  EXPORTED
+  PUBLISHED
+}
+
+enum ValidationSeverity {
+  INFO
+  WARNING
+  ERROR
+}
+
+enum ImageMatchMethod {
+  EXACT_SKU
+  SKU_PREFIX
+  BARCODE
+  SUPPLIER_ID
+  FILENAME
+  MANUAL
+  AI
+}
+
+enum ExportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum IntegrationType {
+  SHOPIFY
+  WOOCOMMERCE
+  AMAZON
+  EBAY
+}
+
+enum IntegrationStatus {
+  PENDING
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum AIJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AuditEvent {
+  LOGIN
+  LOGOUT
+  ORGANIZATION_CREATED
+  MEMBER_INVITED
+  IMPORT_CREATED
+  IMPORT_STARTED
+  IMPORT_COMPLETED
+  EXPORT_CREATED
+  PRODUCT_EDITED
+  AI_CONTENT_APPLIED
+  SHOPIFY_CONNECTED
+  SHOPIFY_DISCONNECTED
+  PLAN_CHANGED
+}
+
+enum SystemRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id               String     @id @default(cuid())
+  email            String     @unique
+  passwordHash     String
+  name             String
+  avatarUrl        String?
+  systemRole       SystemRole @default(USER)
+  status           UserStatus @default(ACTIVE)
+  emailVerifiedAt  DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime?
+
+  sessions              Session[]
+  refreshTokens         RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
+  memberships           OrganizationMember[]
+  createdImports        ImportJob[] @relation("ImportCreator")
+  createdExports        ExportJob[] @relation("ExportCreator")
+  auditLogs             AuditLog[]
+  apiKeys               APIKey[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  members       OrganizationMember[]
+  subscription  Subscription?
+  usageRecords  UsageRecord[]
+  imports       ImportJob[]
+  exports       ExportJob[]
+  integrations  Integration[]
+  aiJobs        AIJob[]
+  auditLogs     AuditLog[]
+  apiKeys       APIKey[]
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrganizationRole
+  createdAt      DateTime         @default(now())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  organizationId       String             @unique
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                 Plan               @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model UsageRecord {
+  id                 String       @id @default(cuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  period             String
+  productsProcessed  Int          @default(0)
+  aiGenerations      Int          @default(0)
+  importsCreated     Int          @default(0)
+  exportsCreated     Int          @default(0)
+  storageBytes       BigInt       @default(0)
+  imageMatches       Int          @default(0)
+  shopifyPublishes   Int          @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@unique([organizationId, period])
+}
+
+model ImportJob {
+  id                String         @id @default(cuid())
+  organizationId    String
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUserId   String
+  createdBy         User           @relation("ImportCreator", fields: [createdByUserId], references: [id])
+  name              String
+  sourcePlatform    SourcePlatform @default(GENERIC)
+  targetPlatform    TargetPlatform @default(SHOPIFY)
+  status            ImportStatus   @default(CREATED)
+  totalRows         Int            @default(0)
+  processedRows     Int            @default(0)
+  successfulRows    Int            @default(0)
+  failedRows        Int            @default(0)
+  warningRows       Int            @default(0)
+  progressPercentage Int           @default(0)
+  currentStage      String?
+  detectedHeaders   Json?
+  detectedEncoding  String?
+  detectedDelimiter String?
+  selectedSheet     String?
+  sampleRows        Json?
+  processingLock    String?
+  errorCode         String?
+  errorMessage      String?
+  createdAt         DateTime       @default(now())
+  startedAt         DateTime?
+  completedAt       DateTime?
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+
+  files      ImportFile[]
+  mappings   ColumnMapping[]
+  products   Product[]
+  issues     ValidationIssue[]
+  exports    ExportJob[]
+  aiJobs     AIJob[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([organizationId, status])
+}
+
+model ImportFile {
+  id           String         @id @default(cuid())
+  importId     String
+  import       ImportJob      @relation(fields: [importId], references: [id], onDelete: Cascade)
+  type         ImportFileType
+  originalName String
+  storageKey   String
+  mimeType     String
+  fileSize     Int
+  checksum     String?
+  createdAt    DateTime       @default(now())
+
+  @@index([importId])
+}
+
+model ColumnMapping {
+  id              String    @id @default(cuid())
+  importId        String
+  import          ImportJob @relation(fields: [importId], references: [id], onDelete: Cascade)
+  sourceColumn    String
+  targetField     String
+  confidence      Float
+  autoDetected    Boolean   @default(true)
+  confirmedByUser Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  @@unique([importId, sourceColumn])
+  @@index([importId])
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  importId        String
+  import          ImportJob     @relation(fields: [importId], references: [id], onDelete: Cascade)
+  externalId      String?
+  sku             String?
+  title           String
+  handle          String?
+  description     String?
+  descriptionHtml String?
+  vendor          String?
+  productType     String?
+  status          ProductStatus @default(DRAFT)
+  price           Decimal?      @db.Decimal(12, 2)
+  compareAtPrice  Decimal?      @db.Decimal(12, 2)
+  cost            Decimal?      @db.Decimal(12, 2)
+  barcode         String?
+  seoTitle        String?
+  seoDescription  String?
+  rawData         Json?
+  normalizedData  Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  variants ProductVariant[]
+  options  ProductOption[]
+  images   ProductImage[]
+  tags     ProductTag[]
+  issues   ValidationIssue[]
+  aiJobs   AIJob[]
+
+  @@index([importId])
+  @@index([sku])
+  @@index([barcode])
+  @@index([status])
+  @@index([importId, status])
+}
+
+model ProductVariant {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  externalId        String?
+  sku               String?
+  barcode           String?
+  price             Decimal? @db.Decimal(12, 2)
+  compareAtPrice    Decimal? @db.Decimal(12, 2)
+  cost              Decimal? @db.Decimal(12, 2)
+  inventoryQuantity Int?
+  weight            Decimal? @db.Decimal(12, 4)
+  weightUnit        String?
+  optionValues      Json
+  rawData           Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  issues ValidationIssue[]
+
+  @@index([productId])
+  @@index([sku])
+}
+
+model ProductOption {
+  id        String               @id @default(cuid())
+  productId String
+  product   Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  position  Int
+  values    ProductOptionValue[]
+
+  @@index([productId])
+}
+
+model ProductOptionValue {
+  id       String        @id @default(cuid())
+  optionId String
+  option   ProductOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  value    String
+  position Int
+}
+
+model ProductImage {
+  id         String            @id @default(cuid())
+  productId  String
+  product    Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sourceUrl  String?
+  storageKey String?
+  url        String?
+  altText    String?
+  position   Int               @default(1)
+  matchedBy  ImageMatchMethod?
+  confidence Float?
+  createdAt  DateTime          @default(now())
+
+  @@index([productId])
+}
+
+model ProductTag {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+
+  @@index([productId])
+}
+
+model ValidationIssue {
+  id         String             @id @default(cuid())
+  importId   String
+  import     ImportJob          @relation(fields: [importId], references: [id], onDelete: Cascade)
+  productId  String?
+  product    Product?           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId  String?
+  variant    ProductVariant?    @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  field      String
+  code       String
+  message    String
+  severity   ValidationSeverity
+  resolved   Boolean            @default(false)
+  resolution String?
+  createdAt  DateTime           @default(now())
+  resolvedAt DateTime?
+
+  @@index([importId])
+  @@index([productId])
+  @@index([importId, severity, resolved])
+}
+
+model ExportJob {
+  id                String         @id @default(cuid())
+  organizationId    String
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUserId   String
+  createdBy         User           @relation("ExportCreator", fields: [createdByUserId], references: [id])
+  importId          String?
+  import            ImportJob?     @relation(fields: [importId], references: [id], onDelete: SetNull)
+  platform          TargetPlatform
+  status            ExportStatus   @default(QUEUED)
+  totalProducts     Int            @default(0)
+  processedProducts Int            @default(0)
+  errorMessage      String?
+  createdAt         DateTime       @default(now())
+  startedAt         DateTime?
+  completedAt       DateTime?
+  updatedAt         DateTime       @updatedAt
+
+  files ExportFile[]
+
+  @@index([organizationId])
+  @@index([importId])
+}
+
+model ExportFile {
+  id         String    @id @default(cuid())
+  exportId   String
+  exportJob  ExportJob @relation(fields: [exportId], references: [id], onDelete: Cascade)
+  storageKey String
+  fileName   String
+  mimeType   String
+  fileSize   Int
+  checksum   String?
+  createdAt  DateTime  @default(now())
+
+  @@index([exportId])
+}
+
+model Integration {
+  id                   String            @id @default(cuid())
+  organizationId       String
+  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type                 IntegrationType
+  status               IntegrationStatus @default(PENDING)
+  externalAccountId    String?
+  encryptedCredentials String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  shopifyStore         ShopifyStore?
+
+  @@index([organizationId])
+}
+
+model ShopifyStore {
+  id            String      @id @default(cuid())
+  integrationId String      @unique
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  shopDomain    String
+  scopes        String
+  installedAt   DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model AIJob {
+  id             String      @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  importId       String?
+  import         ImportJob?  @relation(fields: [importId], references: [id], onDelete: SetNull)
+  productId      String?
+  product        Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  operation      String
+  model          String
+  status         AIJobStatus @default(QUEUED)
+  inputTokens    Int?
+  outputTokens   Int?
+  estimatedCost  Decimal?    @db.Decimal(12, 6)
+  errorMessage   String?
+  result         Json?
+  createdAt      DateTime    @default(now())
+  completedAt    DateTime?
+
+  @@index([organizationId])
+  @@index([productId])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  event          AuditEvent
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([event])
+}
+
+model WebhookEvent {
+  id              String   @id @default(cuid())
+  provider        String
+  providerEventId String
+  type            String
+  processedAt     DateTime?
+  payloadHash     String?
+  createdAt       DateTime @default(now())
+
+  @@unique([provider, providerEventId])
+}
+
+model APIKey {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  keyHash        String        @unique
+  lastFour       String
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
+}
