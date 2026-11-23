@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X, FileSpreadsheet, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Menu, X, FileSpreadsheet, ShieldCheck, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { useIsSignedIn } from '@/lib/session';
 import { Logo } from '@/components/brand/logo';
 import { ThemeToggle } from '@/components/theme/theme';
 
@@ -14,6 +15,7 @@ interface MarketingShellProps {
 export function MarketingShell({ children }: MarketingShellProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const signedIn = useIsSignedIn();
 
   const navLinks = [
     { name: 'Features', href: '/features' },
@@ -55,19 +57,31 @@ export function MarketingShell({ children }: MarketingShellProps) {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Link
-              href="/login"
-              className="text-sm font-medium text-[#0F172A] dark:text-slate-100 hover:text-[#2563EB] dark:hover:text-blue-300 transition-colors px-3 py-2"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold px-4 py-2.5 rounded-[8px] transition-colors shadow-sm flex items-center gap-1.5"
-            >
-              <span>Try CatalogFix</span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
+            {signedIn ? (
+              <Link
+                href="/dashboard"
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold px-4 py-2.5 rounded-[8px] transition-colors shadow-sm flex items-center gap-1.5"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Dashboard</span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-[#0F172A] dark:text-slate-100 hover:text-[#2563EB] dark:hover:text-blue-300 transition-colors px-3 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold px-4 py-2.5 rounded-[8px] transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>Try CatalogFix</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -96,21 +110,34 @@ export function MarketingShell({ children }: MarketingShellProps) {
                 {link.name}
               </Link>
             ))}
-            <div className="pt-3 border-t border-[#E2E8F0] flex flex-col gap-2">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 text-sm font-semibold text-[#0F172A] border border-[#E2E8F0] rounded-[8px]"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 text-sm font-semibold text-white bg-[#2563EB] rounded-[8px]"
-              >
-                Try CatalogFix
-              </Link>
+            <div className="pt-3 border-t border-[#E2E8F0] dark:border-slate-800 flex flex-col gap-2">
+              {signedIn ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-[#2563EB] rounded-[8px]"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Go to dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 text-sm font-semibold text-[#0F172A] dark:text-slate-100 border border-[#E2E8F0] dark:border-slate-700 rounded-[8px]"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 text-sm font-semibold text-white bg-[#2563EB] rounded-[8px]"
+                  >
+                    Try CatalogFix
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
