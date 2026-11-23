@@ -195,7 +195,7 @@ export default function CatalogFixHomepage() {
               </div>
 
               {/* Demo Interactive Body */}
-              <div className="p-6 font-mono text-xs space-y-4 min-h-[320px] bg-slate-950/80">
+              <div className="p-6 font-mono text-xs space-y-4 min-h-[230px] bg-slate-950/80">
                 {simulatedView === 'RAW' && (
                   <div className="space-y-3 animate-fade-in">
                     <div className="flex items-center justify-between text-rose-400 text-xs font-sans pb-2 border-b border-slate-900">
@@ -341,6 +341,36 @@ export default function CatalogFixHomepage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Pipeline status bar — summarises the selected step */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-slate-800 bg-slate-900/60 text-[11px]">
+                {(simulatedView === 'RAW'
+                  ? [
+                      { label: 'Rows scanned', value: '2', tone: 'text-slate-200' },
+                      { label: 'Errors found', value: '5', tone: 'text-rose-400' },
+                      { label: 'Duplicate SKUs', value: '1', tone: 'text-amber-300' },
+                      { label: 'Shopify-ready', value: 'No', tone: 'text-rose-400' },
+                    ]
+                  : simulatedView === 'MAPPED'
+                    ? [
+                        { label: 'Columns detected', value: '5', tone: 'text-slate-200' },
+                        { label: 'Auto-mapped', value: '4 / 5', tone: 'text-indigo-300' },
+                        { label: 'Avg. confidence', value: '97%', tone: 'text-emerald-400' },
+                        { label: 'Ignored fields', value: '1', tone: 'text-slate-400' },
+                      ]
+                    : [
+                        { label: 'Products', value: '1', tone: 'text-slate-200' },
+                        { label: 'Variants grouped', value: '2', tone: 'text-indigo-300' },
+                        { label: 'Errors remaining', value: '0', tone: 'text-emerald-400' },
+                        { label: 'Shopify-ready', value: 'Yes', tone: 'text-emerald-400' },
+                      ]
+                ).map((stat) => (
+                  <div key={stat.label} className="px-5 py-3.5 border-slate-800 [&:not(:last-child)]:sm:border-r">
+                    <p className="text-slate-500 font-medium">{stat.label}</p>
+                    <p className={`mt-0.5 font-mono text-sm font-bold ${stat.tone}`}>{stat.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

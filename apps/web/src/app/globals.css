@@ -218,6 +218,13 @@
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
 
+/*
+ * Component classes live in the `components` layer so Tailwind utilities
+ * (pl-10, py-3, w-full, …) placed on the same element can override them.
+ * Unlayered, `.input { padding }` beat `pl-10` and icons overlapped text.
+ */
+@layer components {
+
 /* ===== Shimmer Skeleton Loading ===== */
 .skeleton {
   background: linear-gradient(
@@ -524,3 +531,5 @@
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
+
+} /* end @layer components */

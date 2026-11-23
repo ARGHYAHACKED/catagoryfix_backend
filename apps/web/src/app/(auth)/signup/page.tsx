@@ -3,10 +3,15 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ArrowRight, User, Building2, Mail, Lock, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Sparkles, ArrowRight, User, Building2, Mail, Lock, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { AuthShell, AuthField } from '@/components/layout/auth-shell';
 
-const STEPS = ['Your Details', 'Workspace', 'Access'];
+function strength(length: number) {
+  if (length >= 10) return { label: 'Strong enough', bar: 'w-full bg-emerald-500', text: 'text-emerald-600' };
+  if (length >= 6) return { label: `${10 - length} more characters`, bar: 'w-2/3 bg-amber-500', text: 'text-amber-600' };
+  return { label: `${10 - length} more characters`, bar: 'w-1/3 bg-rose-400', text: 'text-rose-600' };
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -34,145 +39,112 @@ export default function SignupPage() {
     }
   }
 
+  const s = strength(password.length);
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/20 flex items-center justify-center p-6 antialiased">
-      <div className="w-full max-w-md">
-        {/* Brand header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-500/30 mb-4 animate-float">
-            <Sparkles className="h-7 w-7" />
+    <AuthShell
+      title="Create your workspace"
+      subtitle="Turn supplier catalogs into Shopify-ready products."
+      footer={
+        <div className="space-y-5">
+          <p className="text-center text-sm text-slate-500">
+            Already registered?{' '}
+            <Link className="font-semibold text-indigo-600 hover:text-indigo-500" href="/login">
+              Log in
+            </Link>
+          </p>
+          <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-400">
+            {['No credit card required', 'Free plan', 'Secure & private'].map((item) => (
+              <li key={item} className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <AuthField
+            id="name"
+            label="Full name"
+            icon={User}
+            autoComplete="name"
+            placeholder="Jane Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <AuthField
+            id="workspace"
+            label="Workspace"
+            hint="(optional)"
+            icon={Building2}
+            autoComplete="organization"
+            placeholder="My Store"
+            value={organizationName}
+            onChange={(e) => setOrganizationName(e.target.value)}
+          />
+        </div>
+
+        <AuthField
+          id="email"
+          label="Work email"
+          icon={Mail}
+          type="email"
+          autoComplete="email"
+          placeholder="jane@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <div>
+          <AuthField
+            id="password"
+            label="Password"
+            hint="(min. 10 characters)"
+            icon={Lock}
+            type="password"
+            autoComplete="new-password"
+            placeholder="Create a password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={10}
+          />
+          {password.length > 0 && (
+            <div className="mt-2 flex items-center gap-2.5">
+              <div className="flex-1 h-1 rounded-full bg-slate-200 overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${s.bar}`} />
+              </div>
+              <span className={`text-[11px] font-semibold ${s.text}`}>{s.label}</span>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div role="alert" className="notification notification-error animate-fade-in">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 mb-1">Create Your Workspace</h1>
-          <p className="text-sm text-slate-500">Turn supplier catalogs into Shopify-ready products.</p>
-        </div>
+        )}
 
-        {/* Form card */}
-        <div className="card p-8 animate-scale-in">
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Your Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    className="input pl-10"
-                    placeholder="Jane Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Workspace Name</label>
-                <div className="relative">
-                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    className="input pl-10"
-                    placeholder="My Store Catalog"
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Work Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  className="input pl-10"
-                  placeholder="jane@company.com"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Password
-                <span className="ml-1.5 text-[10px] font-normal text-slate-400">(minimum 10 characters)</span>
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  className="input pl-10"
-                  placeholder="••••••••••••"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={10}
-                />
-              </div>
-              {password.length > 0 && (
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <div className="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        password.length >= 10 ? 'bg-emerald-500 w-full' :
-                        password.length >= 6 ? 'bg-amber-500 w-2/3' : 'bg-rose-400 w-1/3'
-                      }`}
-                    />
-                  </div>
-                  <span className={`text-[10px] font-semibold ${
-                    password.length >= 10 ? 'text-emerald-600' :
-                    password.length >= 6 ? 'text-amber-600' : 'text-rose-600'
-                  }`}>
-                    {password.length >= 10 ? 'Strong' : password.length >= 6 ? 'Fair' : 'Weak'}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {error && (
-              <div className="notification notification-error animate-fade-in">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs">{error}</span>
-              </div>
-            )}
-
-            <button
-              disabled={busy}
-              className="btn btn-primary w-full justify-center text-sm py-3 mt-2"
-              type="submit"
-            >
-              {busy ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Creating Workspace…</span>
-                </>
-              ) : (
-                <>
-                  <span>Create Workspace</span>
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-
-            <p className="text-center text-sm text-slate-500 pt-1">
-              Already registered?{' '}
-              <Link className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors" href="/login">
-                Log in
-              </Link>
-            </p>
-          </form>
-        </div>
-
-        {/* Trust badges */}
-        <div className="flex items-center justify-center gap-6 mt-6">
-          {['No credit card required', 'Free forever', 'Secure & private'].map((item) => (
-            <div key={item} className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-              {item}
-            </div>
-          ))}
-        </div>
-      </div>
-    </main>
+        <button disabled={busy} type="submit" className="btn btn-primary w-full justify-center h-11 text-sm">
+          {busy ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creating workspace…
+            </>
+          ) : (
+            <>
+              Create workspace
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </button>
+      </form>
+    </AuthShell>
   );
 }
