@@ -6,6 +6,10 @@ import type { ImportJobPayload } from '@catalogfix/queue';
 
 export async function processValidationJob(job: Job<ImportJobPayload>): Promise<void> {
   const { importId, organizationId } = job.data;
+  const current = await prisma.importJob.findUnique({ where: { id: importId }, select: { status: true } });
+  if (!current || current.status === 'CANCELLED') {
+    return;
+  }
   const products = await prisma.product.findMany({
     where: { importId, deletedAt: null },
     include: { variants: true, images: true, tags: true, options: { include: { values: true } } },

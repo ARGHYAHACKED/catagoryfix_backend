@@ -148,6 +148,42 @@ export class ImportsController {
     return job;
   }
 
+  /**
+   * Stops an import that hasn't finished: marks it CANCELLED (it stays in the list)
+   * and removes any of its jobs still waiting in the queue. A job already running
+   * finishes its current step; the worker skips cancelled imports at each stage.
+   */
+  @Post(':id/cancel')
+  async cancel(@Req() req: Request & { organizationId?: string; user?: AuthUser }, @Param('id') id: string) {
+    const job = await prisma.importJob.findFirst({
+      where: { id, organizationId: req.organizationId, deletedAt: null },
+    });
+    if (!job) {
+      throw new NotFoundException({ code: 'IMPORT_NOT_FOUND', message: 'Import could not be found.' });
+    }
+    if (['READY', 'COMPLETED', 'FAILED', 'CANCELLED'].includes(job.status)) {
+      throw new BadRequestException({ code: 'IMPORT_NOT_CANCELLABLE', message: `This import is already ${job.status.toLowerCase()}.` });
+    }
+
+    await prisma.importJob.update({
+      where: { id },
+      data: { status: 'CANCELLED', currentStage: 'Cancelled by user', completedAt: new Date() },
+    });
+
+    // Best effort: drop queued jobs for this import. Never fail the cancel over Redis.
+    try {
+      const { import: importQueue, normalize } = queues();
+      const parse = await importQueue.getJob(`import-parse-${id}`);
+      if (parse && !(await parse.isActive())) await parse.remove();
+      const waiting = await normalize.getJobs(['waiting', 'delayed', 'prioritized']);
+      await Promise.all(waiting.filter((j) => j.data?.importId === id).map((j) => j.remove()));
+    } catch {
+      // The worker also checks for CANCELLED before doing any work.
+    }
+
+    return { ok: true, status: 'CANCELLED' };
+  }
+
   @Delete(':id')
   async remove(@Req() req: Request & { organizationId?: string }, @Param('id') id: string) {
     const job = await prisma.importJob.findFirst({

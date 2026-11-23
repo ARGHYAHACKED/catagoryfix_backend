@@ -23,7 +23,11 @@ import {
   Cpu,
   BarChart3,
   Tag,
+  XCircle,
 } from 'lucide-react';
+
+/** Statuses where the import hasn't finished, so it can still be stopped. */
+const CANCELLABLE = ['CREATED', 'UPLOADING', 'UPLOADED', 'QUEUED', 'PARSING', 'MAPPING_REQUIRED', 'PROCESSING', 'VALIDATING'];
 
 type Mapping = { id?: string; sourceColumn: string; targetField: string; confidence: number };
 
@@ -125,6 +129,21 @@ export default function ImportDetailPage() {
     },
   });
 
+  const cancel = useMutation({
+    mutationFn: () => api(`/imports/${id}/cancel`, { method: 'POST', organizationId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['import', id] });
+      qc.invalidateQueries({ queryKey: ['imports'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
+  function confirmCancel() {
+    if (window.confirm('Stop this import? Processing stops and the import is marked as cancelled. You can upload the file again later.')) {
+      cancel.mutate();
+    }
+  }
+
   const job = jobQuery.data as {
     name?: string;
     status?: string;
@@ -142,6 +161,7 @@ export default function ImportDetailPage() {
   );
 
   const isProcessing = job?.status && ['QUEUED', 'PARSING', 'PROCESSING', 'VALIDATING'].includes(job.status);
+  const canCancel = Boolean(job?.status && CANCELLABLE.includes(job.status));
 
   return (
     <DashboardShell>
@@ -167,6 +187,18 @@ export default function ImportDetailPage() {
           </p>
         </div>
 
+        {canCancel && (
+          <button
+            type="button"
+            onClick={confirmCancel}
+            disabled={cancel.isPending}
+            className="inline-flex h-10 items-center gap-2 self-start rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60 sm:self-auto dark:border-rose-500/40 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-500/10"
+          >
+            {cancel.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+            {cancel.isPending ? 'Cancelling…' : 'Cancel import'}
+          </button>
+        )}
+
         {['READY', 'COMPLETED'].includes(job?.status ?? '') && (
           <button
             onClick={() => exportJob.mutate()}
@@ -187,6 +219,26 @@ export default function ImportDetailPage() {
           </button>
         )}
       </div>
+
+      {cancel.isError && (
+        <div role="alert" className="notification notification-error mb-6">
+          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{cancel.error instanceof Error ? cancel.error.message : 'Could not cancel this import.'}</span>
+        </div>
+      )}
+
+      {job?.status === 'CANCELLED' && (
+        <div className="notification notification-warning mb-6">
+          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            This import was cancelled.{' '}
+            <Link href="/dashboard/imports/new" className="font-semibold underline">
+              Upload the file again
+            </Link>{' '}
+            to start over.
+          </span>
+        </div>
+      )}
 
       {/* Processing Progress Bar */}
       {isProcessing && (

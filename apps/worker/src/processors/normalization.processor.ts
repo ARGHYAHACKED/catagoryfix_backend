@@ -17,7 +17,7 @@ export async function processNormalizeJob(job: Job<ImportJobPayload>): Promise<v
     where: { id: importId, organizationId, deletedAt: null },
     include: { files: true, mappings: true },
   });
-  if (!importJob) {
+  if (!importJob || importJob.status === 'CANCELLED') {
     return;
   }
   if (importJob.status === 'READY' || importJob.status === 'COMPLETED') {
@@ -66,6 +66,10 @@ export async function processNormalizeJob(job: Job<ImportJobPayload>): Promise<v
   await prisma.product.deleteMany({ where: { importId } });
 
   for (let i = 0; i < products.length; i += CHUNK) {
+    if (await isCancelled(importId)) {
+      logger.info({ jobId: job.id, importId }, 'Import cancelled during normalization');
+      return;
+    }
     const slice = products.slice(i, i + CHUNK);
     await persistProducts(importId, slice);
     await prisma.importJob.update({
@@ -84,7 +88,11 @@ export async function processNormalizeJob(job: Job<ImportJobPayload>): Promise<v
     create: { organizationId, period: currentPeriod(), productsProcessed: products.length },
   });
 
-  const validationQueue = createQueue(QUEUE_NAMES.CATALOG_VALIDATION, bullConnection(config.REDIS_URL));
+  if (await isCancelled(importId)) {
+    logger.info({ jobId: job.id, importId }, 'Import cancelled before validation');
+    return;
+  }
+  const validationQueue = validationQueueFor(config.REDIS_URL);
   await prisma.importJob.update({
     where: { id: importId },
     data: { status: 'VALIDATING', currentStage: 'Validating', progressPercentage: 80 },
@@ -95,6 +103,18 @@ export async function processNormalizeJob(job: Job<ImportJobPayload>): Promise<v
     { jobId: `validate-${importId}` },
   );
   logger.info({ jobId: job.id, importId, count: products.length }, 'Normalized catalog');
+}
+
+async function isCancelled(importId: string): Promise<boolean> {
+  const row = await prisma.importJob.findUnique({ where: { id: importId }, select: { status: true } });
+  return row?.status === 'CANCELLED';
+}
+
+let cachedValidationQueue: ReturnType<typeof createQueue> | null = null;
+/** Reuse one queue/connection instead of opening a new Redis connection per job. */
+function validationQueueFor(redisUrl: string) {
+  cachedValidationQueue ??= createQueue(QUEUE_NAMES.CATALOG_VALIDATION, bullConnection(redisUrl));
+  return cachedValidationQueue;
 }
 
 async function persistProducts(importId: string, products: CatalogProduct[]): Promise<void> {

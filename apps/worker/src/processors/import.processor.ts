@@ -14,7 +14,7 @@ export async function processImportJob(job: Job<ImportJobPayload>): Promise<void
     where: { id: importId, organizationId, deletedAt: null },
     include: { files: true, mappings: true },
   });
-  if (!importJob) {
+  if (!importJob || importJob.status === 'CANCELLED') {
     return;
   }
   if (['PROCESSING', 'READY', 'COMPLETED'].includes(importJob.status) && job.data.stage === 'parse-headers') {
@@ -42,8 +42,9 @@ export async function processImportJob(job: Job<ImportJobPayload>): Promise<void
   const suggestions = detectColumns(parsed.headers, sampleRows);
 
   await prisma.$transaction(async (tx) => {
-    await tx.importJob.update({
-      where: { id: importId },
+    // updateMany so a cancel that landed while we were parsing is not overwritten.
+    await tx.importJob.updateMany({
+      where: { id: importId, status: { not: 'CANCELLED' } },
       data: {
         status: 'MAPPING_REQUIRED',
         currentStage: 'Waiting for column mapping',
