@@ -6,8 +6,8 @@
 
 /* ===== CSS Custom Properties ===== */
 :root {
-  --brand-primary: #4f46e5;
-  --brand-secondary: #7c3aed;
+  --brand-primary: #2563eb;
+  --brand-secondary: #059669;
   --brand-accent: #06b6d4;
   --surface-1: #ffffff;
   --surface-2: #f8fafc;
@@ -275,13 +275,13 @@
   cursor: not-allowed;
 }
 .btn-primary {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: #2563eb;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
   transform: translateY(-1px);
 }
 .btn-primary:active:not(:disabled) {
@@ -334,8 +334,8 @@
   outline: none;
 }
 .input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
   background: var(--surface-1);
 }
 .input::placeholder {
@@ -533,3 +533,108 @@
 }
 
 } /* end @layer components */
+
+/* ======================================================================
+ * DARK MODE
+ * The `dark` class on <html> is set by themeInitScript / ThemeToggle.
+ * 1. Tokens and component classes get dark values.
+ * 2. Common light utilities used across older pages are remapped with
+ *    `:where(.dark)` (zero extra specificity), so any element that sets its
+ *    own `dark:` utility still wins over these fallbacks.
+ * ==================================================================== */
+.dark {
+  --surface-1: #0f172a;
+  --surface-2: #0b1120;
+  --surface-3: #1e293b;
+  --border-subtle: #1e2b45;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+:where(.dark) ::-webkit-scrollbar-track { background: #0f172a; }
+:where(.dark) ::-webkit-scrollbar-thumb { background: #334155; }
+
+/* Component classes */
+:where(.dark) .card:hover { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+:where(.dark) .card-interactive:hover { border-color: #1d4ed8; }
+:where(.dark) .input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+:where(.dark) .badge-success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3); }
+:where(.dark) .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border-color: rgba(245, 158, 11, 0.3); }
+:where(.dark) .badge-error { background: rgba(244, 63, 94, 0.15); color: #fda4af; border-color: rgba(244, 63, 94, 0.3); }
+:where(.dark) .badge-info { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+:where(.dark) .badge-neutral { background: #1e293b; color: #cbd5e1; border-color: #334155; }
+:where(.dark) .badge-brand { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+:where(.dark) .notification-success { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+:where(.dark) .notification-error { background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.3); color: #fda4af; }
+:where(.dark) .notification-warning { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); color: #fcd34d; }
+:where(.dark) .notification-info { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; }
+:where(.dark) .nav-link { color: #94a3b8; }
+:where(.dark) .nav-link:hover { background: #1e293b; color: #f1f5f9; }
+:where(.dark) .nav-link.active { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.35); }
+:where(.dark) .nav-link.active svg { color: #93c5fd; }
+:where(.dark) .data-table th { background: #0b1120; color: #94a3b8; border-bottom-color: #1e2b45; }
+:where(.dark) .data-table td { border-bottom-color: #1e2b45; }
+:where(.dark) .data-table tbody tr:hover { background: #13203a; }
+:where(.dark) .upload-zone { border-color: #1e3a8a; background: #0f172a; }
+:where(.dark) .upload-zone:hover { border-color: #3b82f6; background: #111c33; }
+:where(.dark) .upload-zone.drag-active { background: rgba(59, 130, 246, 0.12); }
+:where(.dark) .upload-zone.file-selected { border-color: #34d399; background: rgba(16, 185, 129, 0.08); }
+:where(.dark) .progress-bar-track { background: #1e293b; }
+:where(.dark) .skeleton { background: linear-gradient(90deg, #1e293b 0px, #273449 40px, #1e293b 80px); background-size: 1000px 100%; }
+:where(.dark) .glass-card { background: rgba(15, 23, 42, 0.85); border-color: rgba(51, 65, 85, 0.6); }
+
+/* Surfaces */
+:where(.dark) .bg-white { background-color: #0f172a; }
+:where(.dark) .bg-white\/90, :where(.dark) .bg-white\/95, :where(.dark) .bg-white\/80 { background-color: rgba(15, 23, 42, 0.9); }
+:where(.dark) .bg-slate-50, :where(.dark) .bg-gray-50, :where(.dark) .bg-\[\#F8FAFC\] { background-color: #0b1120; }
+:where(.dark) .bg-slate-100, :where(.dark) .bg-gray-100 { background-color: #1e293b; }
+:where(.dark) .bg-slate-200 { background-color: #273449; }
+:where(.dark) .hover\:bg-slate-50:hover, :where(.dark) .hover\:bg-slate-100:hover, :where(.dark) .hover\:bg-gray-50:hover { background-color: #1e293b; }
+:where(.dark) .bg-indigo-50, :where(.dark) .bg-blue-50, :where(.dark) .bg-violet-50 { background-color: rgba(59, 130, 246, 0.12); }
+:where(.dark) .bg-indigo-100, :where(.dark) .bg-blue-100, :where(.dark) .bg-violet-100 { background-color: rgba(59, 130, 246, 0.2); }
+:where(.dark) .bg-emerald-50, :where(.dark) .bg-green-50 { background-color: rgba(16, 185, 129, 0.12); }
+:where(.dark) .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.2); }
+:where(.dark) .bg-amber-50, :where(.dark) .bg-yellow-50 { background-color: rgba(245, 158, 11, 0.12); }
+:where(.dark) .bg-amber-100 { background-color: rgba(245, 158, 11, 0.2); }
+:where(.dark) .bg-rose-50, :where(.dark) .bg-red-50 { background-color: rgba(244, 63, 94, 0.12); }
+:where(.dark) .bg-rose-100 { background-color: rgba(244, 63, 94, 0.2); }
+
+/* Borders */
+:where(.dark) .border-slate-100, :where(.dark) .border-slate-200, :where(.dark) .border-gray-100, :where(.dark) .border-gray-200,
+:where(.dark) .border-\[\#E2E8F0\] { border-color: #1e2b45; }
+:where(.dark) .border-slate-300, :where(.dark) .border-gray-300 { border-color: #2c3b5a; }
+:where(.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+:where(.dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: #1e2b45; }
+:where(.dark) .border-indigo-100, :where(.dark) .border-indigo-200, :where(.dark) .border-blue-100, :where(.dark) .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
+:where(.dark) .border-emerald-100, :where(.dark) .border-emerald-200 { border-color: rgba(16, 185, 129, 0.3); }
+:where(.dark) .border-amber-100, :where(.dark) .border-amber-200 { border-color: rgba(245, 158, 11, 0.3); }
+:where(.dark) .border-rose-100, :where(.dark) .border-rose-200 { border-color: rgba(244, 63, 94, 0.3); }
+
+/* Text */
+:where(.dark) .text-slate-900, :where(.dark) .text-slate-800, :where(.dark) .text-gray-900, :where(.dark) .text-ink,
+:where(.dark) .text-\[\#0F172A\] { color: #f1f5f9; }
+:where(.dark) .text-slate-700, :where(.dark) .text-gray-700 { color: #e2e8f0; }
+:where(.dark) .text-slate-600, :where(.dark) .text-gray-600, :where(.dark) .text-\[\#64748B\] { color: #cbd5e1; }
+:where(.dark) .text-slate-500, :where(.dark) .text-gray-500, :where(.dark) .text-muted { color: #94a3b8; }
+:where(.dark) .text-indigo-600, :where(.dark) .text-indigo-700, :where(.dark) .text-blue-600, :where(.dark) .text-blue-700 { color: #93c5fd; }
+:where(.dark) .text-indigo-900, :where(.dark) .text-blue-900 { color: #bfdbfe; }
+:where(.dark) .text-emerald-600, :where(.dark) .text-emerald-700 { color: #6ee7b7; }
+:where(.dark) .text-amber-600, :where(.dark) .text-amber-700 { color: #fcd34d; }
+:where(.dark) .text-rose-600, :where(.dark) .text-rose-700, :where(.dark) .text-red-600 { color: #fda4af; }
+
+/* Respect the OS "reduce motion" setting everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:where(.dark) .btn-primary { background: #3b82f6; }
+:where(.dark) .btn-primary:hover:not(:disabled) { background: #60a5fa; }
+:where(.dark) .btn-secondary { background: #0f172a; color: #e2e8f0; border-color: #2c3b5a; }
+:where(.dark) .btn-secondary:hover:not(:disabled) { background: #1e293b; color: #fff; }
+:where(.dark) .btn-ghost:hover:not(:disabled) { background: #1e293b; color: #fff; }

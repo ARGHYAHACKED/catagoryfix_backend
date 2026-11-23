@@ -1,7 +1,7 @@
 'use client';
 
 import { DashboardShell } from '@/components/layout/dashboard-shell';
-import { api } from '@/lib/api';
+import { logout } from '@/lib/api';
 import {
   Settings,
   LogOut,
@@ -63,11 +63,6 @@ const SETTING_SECTIONS = [
 ];
 
 export default function SettingsPage() {
-  async function logout() {
-    await api('/auth/logout', { method: 'POST' });
-    window.location.href = '/login';
-  }
-
   return (
     <DashboardShell>
       {/* Header */}

@@ -6,84 +6,81 @@ import type { ReactNode } from 'react';
 import {
   LayoutDashboard,
   FileSpreadsheet,
+  Package,
   Download,
+  Plug,
+  Users,
   CreditCard,
   Settings,
   Plus,
-  Sparkles,
-  Bell,
-  User,
-  Package,
   LogOut,
-  ChevronRight,
-  Zap,
   ShieldAlert,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { Logo } from '@/components/brand/logo';
+import { ThemeToggle } from '@/components/theme/theme';
+import { useOrgId } from '@/hooks/use-org-id';
+import { logout } from '@/lib/api';
+import { UNLIMITED, initials, useDashboardSummary, useMe } from '@/lib/dashboard';
 
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/imports', label: 'Imports', icon: FileSpreadsheet },
+  { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/exports', label: 'Exports', icon: Download },
+  { href: '/dashboard/integrations', label: 'Integrations', icon: Plug },
+  { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
+function planName(plan?: string) {
+  if (!plan) return 'Free plan';
+  return `${plan.charAt(0)}${plan.slice(1).toLowerCase()} plan`;
+}
+
 export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const organizationId = useOrgId();
+  const { data: me } = useMe();
+  const { data: summary } = useDashboardSummary(organizationId);
 
-  const { data: meData } = useQuery<{ user: { systemRole: string; email: string } }>({
-    queryKey: ['auth-me'],
-    queryFn: () => api<{ user: { systemRole: string; email: string } }>('/auth/me'),
-    retry: false,
-  });
+  const isAdmin = me?.user?.systemRole === 'ADMIN';
+  const isActive = (item: (typeof NAV)[number]) =>
+    item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-  const isAdmin = meData?.user?.systemRole === 'ADMIN';
-
-  const isActive = (item: (typeof NAV)[0]) => {
-    if (item.exact) return pathname === item.href;
-    return pathname === item.href || pathname.startsWith(item.href + '/');
-  };
+  const used = summary?.productsProcessed ?? 0;
+  const limit = summary?.monthlyLimit ?? UNLIMITED;
+  const unlimited = limit >= UNLIMITED;
+  const usagePct = unlimited ? 0 : Math.min(100, Math.round((used / Math.max(1, limit)) * 100));
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
-
-      {/* ── Sidebar ── */}
-      <aside className="fixed inset-y-0 left-0 hidden w-[240px] bg-white border-r border-slate-100 md:flex flex-col z-30 shadow-sm">
-
-        {/* Brand */}
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 group"
-        >
-          <img src="/logo_catalogfix.png" alt="CatalogFix" className="h-8 w-auto object-contain max-h-[34px]" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
+      {/* ── Sidebar (desktop) ── */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:flex">
+        <Link href="/dashboard" className="flex h-16 items-center px-5" aria-label="CatalogFix dashboard">
+          <Logo className="h-7" />
         </Link>
 
-        {/* Quick action */}
-        <div className="px-4 pt-4 pb-3 space-y-2">
+        <div className="px-4 pb-3 space-y-2">
+          <Link
+            href="/dashboard/imports/new"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-500 hover:-translate-y-0.5 active:translate-y-0 dark:bg-blue-500 dark:hover:bg-blue-400"
+          >
+            <Plus className="h-4 w-4" />
+            New import
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"
-              className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 py-2.5 px-4 text-[13px] font-bold text-white shadow-md shadow-rose-500/25 hover:from-rose-500 hover:to-amber-500 transition-all hover:-translate-y-0.5 active:translate-y-0"
+              className="flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-[13px] font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
             >
               <ShieldAlert className="h-4 w-4" />
-              <span>System Admin Panel</span>
+              Admin panel
             </Link>
           )}
-
-          <Link
-            href="/dashboard/imports/new"
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 px-4 text-[13px] font-semibold text-white shadow-md shadow-indigo-500/25 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/35 transition-all hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Import</span>
-          </Link>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-3 py-2">Navigation</div>
+        <nav aria-label="Dashboard" className="flex-1 overflow-y-auto px-3 py-1 space-y-0.5">
           {NAV.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
@@ -91,94 +88,96 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`nav-link ${active ? 'active' : ''}`}
+                aria-current={active ? 'page' : undefined}
+                className={`flex h-11 items-center gap-3 rounded-xl px-3 text-sm transition-colors ${
+                  active
+                    ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+                    : 'font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+                }`}
               >
-                <div className={`flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0 transition-colors ${
-                  active ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'
-                }`}>
-                  <Icon className="h-3.5 w-3.5" />
-                </div>
-                <span className="flex-1">{item.label}</span>
-                {active && <ChevronRight className="h-3.5 w-3.5 text-indigo-400 ml-auto" />}
+                <Icon className="h-[18px] w-[18px] shrink-0" />
+                {item.label}
               </Link>
             );
           })}
         </nav>
 
-        {/* Sidebar footer */}
-        <div className="border-t border-slate-100 p-4 space-y-3">
-          {/* Plan badge */}
-          <div className="flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 p-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 flex-shrink-0">
-              <Zap className="h-3.5 w-3.5" />
+        <div className="space-y-3 border-t border-slate-200 p-4 dark:border-slate-800">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950">
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="font-semibold">{planName(summary?.plan)}</span>
+              <span className="text-slate-500 dark:text-slate-400">{unlimited ? 'Unlimited' : `${usagePct}%`}</span>
             </div>
-            <div className="min-w-0">
-              <div className="text-[11px] font-bold text-indigo-900 leading-none mb-0.5">Free Plan</div>
-              <div className="text-[10px] text-indigo-500 font-medium truncate">Unlimited dev access</div>
+            <div className="mt-2.5 mb-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-[width] duration-1000 ease-out"
+                style={{ width: `${unlimited ? Math.min(100, used > 0 ? 100 : 0) : usagePct}%` }}
+              />
             </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {used.toLocaleString()} {unlimited ? 'rows processed this month' : `of ${limit.toLocaleString()} rows this month`}
+            </p>
           </div>
-
-          {/* System status */}
-          <div className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
-            <span className="relative flex h-2 w-2 flex-shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="text-[11px] font-semibold text-slate-600">All systems operational</span>
-          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            Sign out
+          </button>
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
-      <div className="md:pl-[240px] flex flex-col min-h-screen">
-
-        {/* Top header */}
-        <header className="sticky top-0 z-20 h-[60px] flex items-center justify-between border-b border-slate-100 bg-white/90 backdrop-blur-md px-6 shadow-xs">
-          <div className="flex items-center gap-4">
-            {/* Mobile logo placeholder */}
-            <div className="flex items-center gap-2 md:hidden">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
-                <Sparkles className="h-3.5 w-3.5" />
-              </div>
-              <span className="font-bold text-sm text-slate-900">CatalogFix</span>
+      {/* ── Main column ── */}
+      <div className="flex min-h-screen flex-col md:pl-[248px]">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/85">
+          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+            <Link href="/dashboard" className="md:hidden" aria-label="CatalogFix dashboard">
+              <Logo className="h-6" />
+            </Link>
+            <div className="ml-auto flex items-center gap-2">
+              <Link
+                href="/dashboard/imports/new"
+                className="hidden h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-[13px] font-semibold text-white transition hover:bg-blue-500 sm:flex md:hidden dark:bg-blue-500"
+              >
+                <Plus className="h-4 w-4" />
+                New import
+              </Link>
+              <ThemeToggle />
+              <Link
+                href="/dashboard/settings"
+                aria-label={`Account settings for ${me?.user?.name || me?.user?.email || 'your account'}`}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 text-sm font-bold text-white"
+              >
+                {initials(me?.user?.name, me?.user?.email)}
+              </Link>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 ml-auto">
-            {/* Bell */}
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all">
-              <Bell className="h-3.5 w-3.5" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-rose-500 border border-white" />
-            </button>
-
-            {/* New import CTA */}
-            <Link
-              href="/dashboard/imports/new"
-              className="hidden sm:flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-[12px] font-semibold text-white shadow-sm shadow-indigo-500/20 hover:from-indigo-500 hover:to-violet-500 transition-all hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>New Import</span>
-            </Link>
-
-            <div className="w-px h-5 bg-slate-200" />
-
-            {/* User avatar */}
-            <button className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 text-slate-600 hover:border-slate-300 transition-all">
-              <User className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          {/* Mobile nav: horizontal, scrollable */}
+          <nav aria-label="Dashboard" className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
+            {NAV.map((item) => {
+              const active = isActive(item);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`shrink-0 rounded-lg px-3 py-2 text-[13px] font-medium ${
+                    active
+                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 p-6 lg:p-8 max-w-[1280px] w-full mx-auto animate-fade-in">
-          {children}
-        </main>
-
-        {/* Footer */}
-        <footer className="border-t border-slate-100 bg-white px-6 py-3 flex items-center justify-between text-[11px] text-slate-400">
-          <span>CatalogFix · Shopify Catalog Operations Platform</span>
-          <span>© 2026</span>
-        </footer>
+        <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

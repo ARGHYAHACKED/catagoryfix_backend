@@ -102,3 +102,19 @@ export async function api<T>(
   }
   return json.data as T;
 }
+
+/** Ends the session on the server and clears every locally stored credential. */
+export async function logout(): Promise<void> {
+  const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('cf_refresh') : null;
+  try {
+    await api('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) });
+  } catch {
+    // Server-side revoke failed (e.g. already expired); still clear local state below.
+  }
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('cf_token');
+    localStorage.removeItem('cf_refresh');
+    localStorage.removeItem('cf_org');
+    window.location.href = '/login';
+  }
+}

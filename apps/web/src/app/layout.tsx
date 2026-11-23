@@ -3,6 +3,7 @@ import './globals.css';
 import { Providers } from '@/providers/providers';
 import { buildMetadata, buildOrganizationSchema, buildSoftwareAppSchema, SITE_URL } from '@/lib/seo';
 import { JsonLd } from '@/components/seo/json-ld';
+import { themeInitScript } from '@/components/theme/theme-script';
 
 export const viewport: Viewport = {
   themeColor: '#4f46e5',
@@ -35,11 +36,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
+        {/* Applies light/dark before first paint to avoid a flash of the wrong theme. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <JsonLd data={jsonLdData} />
       </head>
-      <body className="antialiased bg-slate-50 text-slate-900 selection:bg-indigo-500 selection:text-white">
+      <body className="antialiased bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 selection:bg-blue-600 selection:text-white">
         <Providers>{children}</Providers>
       </body>
     </html>

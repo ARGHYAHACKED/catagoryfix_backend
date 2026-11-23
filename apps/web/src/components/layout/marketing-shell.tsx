@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X, FileSpreadsheet, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
+import { ThemeToggle } from '@/components/theme/theme';
 
 interface MarketingShellProps {
   children: React.ReactNode;
@@ -23,13 +25,13 @@ export function MarketingShell({ children }: MarketingShellProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-[#0F172A] flex flex-col font-sans selection:bg-[#2563EB] selection:text-white antialiased">
+    <div className="min-h-screen bg-white text-[#0F172A] dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans selection:bg-[#2563EB] selection:text-white antialiased">
       {/* HEADER */}
-      <header className="sticky top-0 z-50 h-[76px] bg-white/95 backdrop-blur-md border-b border-[#E2E8F0]">
+      <header className="sticky top-0 z-50 h-[76px] bg-white/95 dark:bg-slate-950/90 backdrop-blur-md border-b border-[#E2E8F0] dark:border-slate-800">
         <div className="max-w-[1240px] mx-auto h-full px-4 sm:px-6 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <img src="/logo_catalogfix.png" alt="CatalogFix" className="h-9 w-auto object-contain max-h-[38px]" />
+            <Logo className="h-8" />
           </Link>
 
           {/* Desktop Nav */}
@@ -41,7 +43,7 @@ export function MarketingShell({ children }: MarketingShellProps) {
                   key={link.name}
                   href={link.href}
                   className={`text-sm font-medium transition-colors ${
-                    isActive ? 'text-[#2563EB] font-semibold' : 'text-[#64748B] hover:text-[#0F172A]'
+                    isActive ? 'text-[#2563EB] dark:text-blue-300 font-semibold' : 'text-[#64748B] hover:text-[#0F172A] dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
                   {link.name}
@@ -51,10 +53,11 @@ export function MarketingShell({ children }: MarketingShellProps) {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/login"
-              className="text-sm font-medium text-[#0F172A] hover:text-[#2563EB] transition-colors px-3 py-2"
+              className="text-sm font-medium text-[#0F172A] dark:text-slate-100 hover:text-[#2563EB] dark:hover:text-blue-300 transition-colors px-3 py-2"
             >
               Sign In
             </Link>
@@ -68,18 +71,21 @@ export function MarketingShell({ children }: MarketingShellProps) {
           </div>
 
           {/* Mobile Menu Toggle */}
+          <div className="md:hidden flex items-center gap-1">
+          <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-[#64748B] hover:text-[#0F172A]"
+            className="p-2 text-[#64748B] hover:text-[#0F172A] dark:text-slate-300 dark:hover:text-white"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
+          </div>
         </div>
 
         {/* Mobile Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-[#E2E8F0] px-4 pt-3 pb-6 space-y-3 shadow-lg">
+          <div className="md:hidden bg-white dark:bg-slate-950 border-b border-[#E2E8F0] dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 shadow-lg">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -120,7 +126,7 @@ export function MarketingShell({ children }: MarketingShellProps) {
             {/* Brand column */}
             <div className="md:col-span-2 space-y-4">
               <Link href="/" className="flex items-center gap-2.5">
-                <img src="/logo_catalogfix.png" alt="CatalogFix" className="h-9 w-auto object-contain max-h-[38px]" />
+                <img src="/logo-dark.png" alt="CatalogFix" className="h-8 w-auto object-contain" />
               </Link>
               <p className="text-[#94A3B8] text-xs leading-relaxed max-w-sm">
                 Transform raw supplier spreadsheets and messy catalog files into store-ready Shopify product CSV feeds automatically with AI mapping, variant handling, and schema validation.

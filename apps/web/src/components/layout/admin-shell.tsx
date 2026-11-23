@@ -62,7 +62,7 @@ export function AdminShell({ children }: AdminShellProps) {
           {/* Admin Header */}
           <div className="p-5 border-b border-slate-800 flex items-center justify-between">
             <Link href="/admin" className="flex items-center gap-3">
-              <img src="/logo_catalogfix.png" alt="CatalogFix" className="h-8 w-auto object-contain max-h-[34px] brightness-125" />
+              <img src="/logo-dark.png" alt="CatalogFix" className="h-7 w-auto object-contain" />
             </Link>
           </div>
 
