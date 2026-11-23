@@ -29,6 +29,12 @@ export function createStorageClient(config: AppConfig): S3Client {
       accessKeyId: config.R2_ACCESS_KEY_ID,
       secretAccessKey: config.R2_SECRET_ACCESS_KEY,
     },
+    // AWS SDK v3.729+ adds CRC32 checksums by default. In presigned PUT URLs that
+    // checksum is computed for an EMPTY body, so the browser's real upload is rejected,
+    // and S3-compatible stores (Supabase Storage, R2, MinIO) don't all support it.
+    // Only send checksums when an operation actually requires them.
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
   });
 }
 
