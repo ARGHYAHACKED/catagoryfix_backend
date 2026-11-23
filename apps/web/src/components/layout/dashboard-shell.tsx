@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -137,13 +137,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <Logo className="h-6" />
             </Link>
             <div className="ml-auto flex items-center gap-2">
-              <Link
-                href="/dashboard/imports/new"
-                className="hidden h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-[13px] font-semibold text-white transition hover:bg-blue-500 sm:flex md:hidden dark:bg-blue-500"
-              >
-                <Plus className="h-4 w-4" />
-                New import
-              </Link>
               <ThemeToggle />
               <Link
                 href="/dashboard/settings"
@@ -155,30 +148,169 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Mobile nav: horizontal, scrollable */}
-          <nav aria-label="Dashboard" className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
-            {NAV.map((item) => {
-              const active = isActive(item);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  className={`shrink-0 rounded-lg px-3 py-2 text-[13px] font-medium ${
-                    active
-                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
-                      : 'text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        {/* Bottom padding on phones so content clears the bottom tab bar. */}
+        <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 pb-28 sm:p-6 sm:pb-28 md:pb-8 lg:p-8">{children}</main>
       </div>
+
+      <MobileTabBar isActive={isActive} isAdmin={isAdmin} planLabel={planName(summary?.plan)} />
     </div>
+  );
+}
+
+/* ───────────── Mobile: bottom tab bar + "Settings" sheet ───────────── */
+
+/** Everything not on the tab bar lives in the Settings sheet. */
+const SHEET_ITEMS = [
+  { href: '/dashboard/products', label: 'Products', icon: Package },
+  { href: '/dashboard/integrations', label: 'Integrations', icon: Plug },
+  { href: '/dashboard/team', label: 'Team', icon: Users },
+  { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard/settings', label: 'Account settings', icon: Settings },
+];
+
+function MobileTabBar({
+  isActive,
+  isAdmin,
+  planLabel,
+}: {
+  isActive: (item: (typeof NAV)[number]) => boolean;
+  isAdmin: boolean;
+  planLabel: string;
+}) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Close the sheet on navigation and on Escape; lock page scroll while it's open.
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  const tab = (href: string, exact = false) => isActive({ href, exact } as (typeof NAV)[number]);
+  const sheetActive = SHEET_ITEMS.some((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));
+
+  const tabClass = (active: boolean) =>
+    `flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors ${
+      active ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'
+    }`;
+
+  return (
+    <>
+      <nav
+        aria-label="Dashboard"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="mx-auto flex max-w-md items-end px-2">
+          <Link href="/dashboard" aria-current={tab('/dashboard', true) ? 'page' : undefined} className={tabClass(tab('/dashboard', true))}>
+            <LayoutDashboard className="h-[22px] w-[22px]" />
+            Overview
+          </Link>
+          <Link href="/dashboard/imports" aria-current={tab('/dashboard/imports') ? 'page' : undefined} className={tabClass(tab('/dashboard/imports') && pathname !== '/dashboard/imports/new')}>
+            <FileSpreadsheet className="h-[22px] w-[22px]" />
+            Imports
+          </Link>
+
+          {/* Primary action, raised above the bar */}
+          <div className="flex flex-1 justify-center">
+            <Link
+              href="/dashboard/imports/new"
+              aria-label="New import"
+              className="-mt-6 mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/35 ring-4 ring-white transition active:scale-95 dark:bg-blue-500 dark:ring-slate-900"
+            >
+              <Plus className="h-6 w-6" strokeWidth={2.5} />
+            </Link>
+          </div>
+
+          <Link href="/dashboard/exports" aria-current={tab('/dashboard/exports') ? 'page' : undefined} className={tabClass(tab('/dashboard/exports'))}>
+            <Download className="h-[22px] w-[22px]" />
+            Exports
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            className={tabClass(open || sheetActive)}
+          >
+            <Settings className="h-[22px] w-[22px]" />
+            Settings
+          </button>
+        </div>
+      </nav>
+
+      {/* Settings sheet */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Settings and more">
+          <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/50 animate-fade-in" />
+          <div
+            className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-slate-200 bg-white px-4 pt-3 shadow-2xl animate-slide-up dark:border-slate-800 dark:bg-slate-900"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+          >
+            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-700" aria-hidden="true" />
+            <div className="mb-3 flex items-center justify-between px-1">
+              <span className="text-base font-bold">Settings</span>
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">{planLabel}</span>
+            </div>
+
+            <ul className="space-y-1">
+              {SHEET_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex min-h-12 items-center gap-3 rounded-xl px-3 text-[15px] font-medium transition-colors ${
+                        active
+                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+                          : 'text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+              {isAdmin && (
+                <li>
+                  <Link href="/admin" className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[15px] font-medium text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10">
+                    <ShieldAlert className="h-5 w-5 shrink-0" />
+                    Admin panel
+                  </Link>
+                </li>
+              )}
+            </ul>
+
+            <div className="mt-3 flex items-center justify-between border-t border-slate-200 px-1 pt-3 dark:border-slate-800">
+              <span className="flex items-center gap-3 text-[15px] font-medium">
+                Appearance
+              </span>
+              <ThemeToggle />
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              className="mt-2 flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-[15px] font-medium text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+            >
+              <LogOut className="h-5 w-5" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

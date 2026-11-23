@@ -671,3 +671,10 @@
 :where(.dark) .text-indigo-800 { color: #bfdbfe; }
 :where(.dark) .bg-indigo-600 { background-color: #3b82f6; }
 :where(.dark) .text-slate-400, :where(.dark) .text-slate-300 { color: #94a3b8; }
+
+/* Bottom sheet entrance (mobile dashboard menu). */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1) both; }
