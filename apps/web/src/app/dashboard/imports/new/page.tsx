@@ -173,7 +173,7 @@ export default function NewImportPage() {
                   key={step.id}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
                     isCurrent
-                      ? 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 border border-indigo-100'
+                      ? 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 border border-indigo-100 dark:from-blue-500/20 dark:to-blue-500/5 dark:text-blue-200 dark:border-blue-500/30'
                       : 'text-slate-400'
                   }`}
                 >
@@ -369,8 +369,8 @@ export default function NewImportPage() {
 
       {/* Info box */}
       <div className="max-w-2xl mt-8 animate-fade-in-up delay-300">
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 p-5">
-          <div className="text-xs font-bold text-indigo-900 mb-3 uppercase tracking-wider">What happens next?</div>
+        <div className="rounded-2xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 p-5 dark:from-blue-500/10 dark:to-slate-900 dark:border-slate-800">
+          <div className="text-xs font-bold text-indigo-900 dark:text-blue-200 mb-3 uppercase tracking-wider">What happens next?</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { step: '1', title: 'File Parsed', desc: 'We auto-detect delimiters, encoding, and header rows.' },
@@ -382,8 +382,8 @@ export default function NewImportPage() {
                   {item.step}
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-indigo-900">{item.title}</div>
-                  <div className="text-[11px] text-indigo-600 mt-0.5">{item.desc}</div>
+                  <div className="text-xs font-semibold text-indigo-900 dark:text-slate-100">{item.title}</div>
+                  <div className="text-[11px] text-indigo-600 dark:text-slate-400 mt-0.5">{item.desc}</div>
                 </div>
               </div>
             ))}

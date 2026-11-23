@@ -638,3 +638,36 @@
 :where(.dark) .btn-secondary { background: #0f172a; color: #e2e8f0; border-color: #2c3b5a; }
 :where(.dark) .btn-secondary:hover:not(:disabled) { background: #1e293b; color: #fff; }
 :where(.dark) .btn-ghost:hover:not(:disabled) { background: #1e293b; color: #fff; }
+
+/* Pastel gradient fallbacks (e.g. `bg-gradient-to-r from-indigo-50 to-violet-50`).
+ * Tailwind gradients are driven by --tw-gradient-* variables, so remap those. */
+:where(.dark) .from-indigo-50, :where(.dark) .from-violet-50, :where(.dark) .from-blue-50,
+:where(.dark) .from-slate-50, :where(.dark) .from-purple-50 {
+  --tw-gradient-from: rgba(59, 130, 246, 0.16) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(59, 130, 246, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+:where(.dark) .from-emerald-50, :where(.dark) .from-green-50 {
+  --tw-gradient-from: rgba(16, 185, 129, 0.14) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(16, 185, 129, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+:where(.dark) .from-amber-50, :where(.dark) .from-rose-50 {
+  --tw-gradient-from: rgba(245, 158, 11, 0.12) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(245, 158, 11, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+:where(.dark) .via-violet-50\/40, :where(.dark) .via-indigo-50, :where(.dark) .via-white {
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(59, 130, 246, 0.08) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+:where(.dark) .to-violet-50, :where(.dark) .to-indigo-50, :where(.dark) .to-blue-50, :where(.dark) .to-purple-50,
+:where(.dark) .to-white, :where(.dark) .to-slate-50 {
+  --tw-gradient-to: rgba(59, 130, 246, 0.06) var(--tw-gradient-to-position);
+}
+:where(.dark) .to-emerald-50, :where(.dark) .to-teal-50 {
+  --tw-gradient-to: rgba(16, 185, 129, 0.06) var(--tw-gradient-to-position);
+}
+:where(.dark) .text-indigo-500 { color: #93c5fd; }
+:where(.dark) .text-indigo-800 { color: #bfdbfe; }
+:where(.dark) .bg-indigo-600 { background-color: #3b82f6; }
+:where(.dark) .text-slate-400, :where(.dark) .text-slate-300 { color: #94a3b8; }

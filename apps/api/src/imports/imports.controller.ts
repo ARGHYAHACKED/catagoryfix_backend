@@ -11,6 +11,7 @@ import {
   Put,
   Query,
   Req,
+  ServiceUnavailableException,
   Sse,
   UseGuards,
 } from '@nestjs/common';
@@ -27,13 +28,47 @@ import type { Request } from 'express';
 
 type SseMessage = { data: { importId: string; organizationId?: string } };
 
-function queues() {
-  const config = loadConfig();
-  const connection = bullConnection(config.REDIS_URL);
-  return {
-    import: createQueue(QUEUE_NAMES.CATALOG_IMPORT, connection),
-    normalize: createQueue(QUEUE_NAMES.CATALOG_NORMALIZE, connection),
-  };
+type Queue = ReturnType<typeof createQueue>;
+type ImportQueues = { import: Queue; normalize: Queue };
+let cachedQueues: ImportQueues | null = null;
+
+/** One set of queues (and Redis connections) per process, not per request. */
+function queues(): ImportQueues {
+  if (!cachedQueues) {
+    const connection = bullConnection(loadConfig().REDIS_URL);
+    cachedQueues = {
+      import: createQueue(QUEUE_NAMES.CATALOG_IMPORT, connection),
+      normalize: createQueue(QUEUE_NAMES.CATALOG_NORMALIZE, connection),
+    };
+  }
+  return cachedQueues;
+}
+
+const ENQUEUE_TIMEOUT_MS = 10_000;
+
+/**
+ * BullMQ waits forever while Redis is unreachable (maxRetriesPerRequest: null), which
+ * left uploads stuck at "Confirming upload". Fail with a clear error instead.
+ */
+async function enqueue(queue: Queue, name: string, data: ImportJobPayload, jobId: string): Promise<void> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new ServiceUnavailableException({
+            code: 'QUEUE_UNAVAILABLE',
+            message: 'The processing queue is not reachable right now. Your file was saved — please try again in a minute.',
+          }),
+        ),
+      ENQUEUE_TIMEOUT_MS,
+    );
+  });
+  try {
+    await Promise.race([queue.add(name, data, { jobId }), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 @Controller('imports')
@@ -164,11 +199,11 @@ export class ImportsController {
       data: { status: 'UPLOADED', name: job.name === 'Untitled import' ? body.originalName : job.name },
     });
     if ((body.type ?? 'CATALOG') === 'CATALOG') {
-      const { import: importQueue } = queues();
-      await importQueue.add(
+      await enqueue(
+        queues().import,
         'parse-headers',
-        { importId: job.id, organizationId: req.organizationId!, stage: 'parse-headers' } satisfies ImportJobPayload,
-        { jobId: `import-parse-${job.id}` },
+        { importId: job.id, organizationId: req.organizationId!, stage: 'parse-headers' },
+        `import-parse-${job.id}`,
       );
       await prisma.importJob.update({ where: { id: job.id }, data: { status: 'QUEUED' } });
     }
@@ -265,10 +300,11 @@ export class ImportsController {
         metadata: { importId: id },
       },
     });
-    await normalize.add(
+    await enqueue(
+      normalize,
       'normalize',
-      { importId: id, organizationId: req.organizationId!, stage: 'normalize' } satisfies ImportJobPayload,
-      { jobId: `import-normalize-${id}-${Date.now()}` },
+      { importId: id, organizationId: req.organizationId!, stage: 'normalize' },
+      `import-normalize-${id}-${Date.now()}`,
     );
     return prisma.importJob.findUnique({ where: { id } });
   }

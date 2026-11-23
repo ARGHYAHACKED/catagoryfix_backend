@@ -20,12 +20,21 @@ export function createRedisConnection(url: string): IORedis {
   return new IORedis(url, { maxRetriesPerRequest: null });
 }
 
+/**
+ * BullMQ connection options from a redis:// or rediss:// URL.
+ * Keeps the username (Redis 6 ACLs, e.g. Upstash's "default"), the DB index, and
+ * turns on TLS for rediss:// — hosted Redis providers require both.
+ */
 export function bullConnection(url: string): ConnectionOptions {
   const parsed = new URL(url);
+  const db = parsed.pathname.replace('/', '');
   return {
     host: parsed.hostname,
     port: Number(parsed.port || 6379),
-    password: parsed.password || undefined,
+    username: parsed.username ? decodeURIComponent(parsed.username) : undefined,
+    password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+    db: db ? Number(db) : undefined,
+    tls: parsed.protocol === 'rediss:' ? {} : undefined,
     maxRetriesPerRequest: null,
   };
 }
