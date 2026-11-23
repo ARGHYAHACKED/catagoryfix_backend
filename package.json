@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
-    "build:api": "pnpm --filter @catalogfix/api... build",
+    "build:api": "pnpm --filter @catalogfix/api... --filter @catalogfix/worker... build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

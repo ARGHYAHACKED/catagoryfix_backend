@@ -57,10 +57,18 @@ async function bootstrap(): Promise<void> {
   // a separate paid background worker). Uses the worker's build from `pnpm build`.
   if (process.env.RUN_WORKER === 'true') {
     const workerEntry = resolve(__dirname, '../../worker/dist/start.js');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { startWorkers } = require(workerEntry) as { startWorkers: () => unknown };
-    startWorkers();
-    logger.info('Queue worker running inside the API process (RUN_WORKER=true)');
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { startWorkers } = require(workerEntry) as { startWorkers: () => unknown };
+      startWorkers();
+      logger.info('Queue worker running inside the API process (RUN_WORKER=true)');
+    } catch (error) {
+      // Keep the API up even if the worker can't start; imports just stay queued.
+      logger.error(
+        { err: error instanceof Error ? error.message : String(error), workerEntry },
+        'RUN_WORKER=true but the worker could not start. Is apps/worker built? (see build-backend.sh)',
+      );
+    }
   }
 }
 
