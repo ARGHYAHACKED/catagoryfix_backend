@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, FileSpreadsheet, Loader2, Plus, Search, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FileSpreadsheet, Loader2, Plus, Search, XCircle } from 'lucide-react';
+import { ConfirmDialog, friendlyError } from '@/components/ui/confirm-dialog';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { useOrgId } from '@/hooks/use-org-id';
 import { api } from '@/lib/api';
@@ -44,6 +45,14 @@ export default function ImportsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterId>('all');
+  const [toCancel, setToCancel] = useState<ImportItem | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['imports', organizationId],
@@ -53,16 +62,34 @@ export default function ImportsPage() {
     refetchInterval: (query) => (query.state.data?.items.some((i) => ACTIVE.includes(i.status)) ? 4000 : false),
   });
 
+  const listKey = ['imports', organizationId];
   const cancel = useMutation({
     mutationFn: (id: string) => api(`/imports/${id}/cancel`, { method: 'POST', organizationId }),
+    // Show "Cancelled" immediately; roll back if the server says no.
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: listKey });
+      const previous = qc.getQueryData<{ items: ImportItem[] }>(listKey);
+      qc.setQueryData<{ items: ImportItem[] }>(listKey, (old) =>
+        old ? { items: old.items.map((i) => (i.id === id ? { ...i, status: 'CANCELLED' } : i)) } : old,
+      );
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(listKey, ctx.previous);
+    },
     onSuccess: () => {
+      setNotice('Import cancelled.');
+      setToCancel(null);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['imports'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 
   function confirmCancel(item: ImportItem) {
-    if (window.confirm(`Stop “${item.name}”? It will be marked as cancelled.`)) cancel.mutate(item.id);
+    cancel.reset();
+    setToCancel(item);
   }
 
   const all = data?.items ?? [];
@@ -125,10 +152,29 @@ export default function ImportsPage() {
         </div>
       </div>
 
-      {cancel.isError && (
+      {notice && (
+        <div role="status" className="notification notification-success mb-4 animate-fade-in">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={toCancel !== null}
+        title="Cancel this import?"
+        description={toCancel ? `“${toCancel.name}” will stop processing and be marked as cancelled. You can upload the file again any time.` : undefined}
+        confirmLabel={cancel.isError ? 'Try again' : 'Cancel import'}
+        cancelLabel="Keep importing"
+        busy={cancel.isPending}
+        error={cancel.isError ? friendlyError(cancel.error, "We couldn't cancel this import right now. Please try again in a moment.") : null}
+        onConfirm={() => toCancel && cancel.mutate(toCancel.id)}
+        onClose={() => setToCancel(null)}
+      />
+
+      {cancel.isError && !toCancel && (
         <div role="alert" className="notification notification-error mb-4">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{cancel.error instanceof Error ? cancel.error.message : 'Could not cancel the import.'}</span>
+          <span>{friendlyError(cancel.error, "We couldn't cancel that import right now. Please try again in a moment.")}</span>
         </div>
       )}
 

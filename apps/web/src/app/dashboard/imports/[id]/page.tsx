@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { ConfirmDialog, friendlyError } from '@/components/ui/confirm-dialog';
 import { useEffect, useState } from 'react';
 import {
   FileSpreadsheet,
@@ -129,9 +130,15 @@ export default function ImportDetailPage() {
     },
   });
 
+  const [askCancel, setAskCancel] = useState(false);
   const cancel = useMutation({
     mutationFn: () => api(`/imports/${id}/cancel`, { method: 'POST', organizationId }),
     onSuccess: () => {
+      setAskCancel(false);
+      // Show the cancelled state immediately, then refresh from the server.
+      qc.setQueriesData({ queryKey: ['import', id] }, (old: unknown) =>
+        old && typeof old === 'object' ? { ...(old as object), status: 'CANCELLED', currentStage: 'Cancelled by user' } : old,
+      );
       qc.invalidateQueries({ queryKey: ['import', id] });
       qc.invalidateQueries({ queryKey: ['imports'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
@@ -139,9 +146,8 @@ export default function ImportDetailPage() {
   });
 
   function confirmCancel() {
-    if (window.confirm('Stop this import? Processing stops and the import is marked as cancelled. You can upload the file again later.')) {
-      cancel.mutate();
-    }
+    cancel.reset();
+    setAskCancel(true);
   }
 
   const job = jobQuery.data as {
@@ -220,12 +226,17 @@ export default function ImportDetailPage() {
         )}
       </div>
 
-      {cancel.isError && (
-        <div role="alert" className="notification notification-error mb-6">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{cancel.error instanceof Error ? cancel.error.message : 'Could not cancel this import.'}</span>
-        </div>
-      )}
+      <ConfirmDialog
+        open={askCancel}
+        title="Cancel this import?"
+        description="Processing stops and the import is marked as cancelled. You can upload the file again any time."
+        confirmLabel={cancel.isError ? 'Try again' : 'Cancel import'}
+        cancelLabel="Keep importing"
+        busy={cancel.isPending}
+        error={cancel.isError ? friendlyError(cancel.error, "We couldn't cancel this import right now. Please try again in a moment.") : null}
+        onConfirm={() => cancel.mutate()}
+        onClose={() => setAskCancel(false)}
+      />
 
       {job?.status === 'CANCELLED' && (
         <div className="notification notification-warning mb-6">
