@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { resolve } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -51,6 +52,16 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(config.API_PORT);
   logger.info({ port: config.API_PORT }, 'CatalogFix API listening');
+
+  // Optional: process queue jobs in this same process (one free web service instead of
+  // a separate paid background worker). Uses the worker's build from `pnpm build`.
+  if (process.env.RUN_WORKER === 'true') {
+    const workerEntry = resolve(__dirname, '../../worker/dist/start.js');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { startWorkers } = require(workerEntry) as { startWorkers: () => unknown };
+    startWorkers();
+    logger.info('Queue worker running inside the API process (RUN_WORKER=true)');
+  }
 }
 
 bootstrap().catch((error) => {
